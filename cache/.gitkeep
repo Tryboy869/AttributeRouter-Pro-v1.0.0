@@ -1,0 +1,4 @@
+# This file ensures the cache directory is included in version control
+# The cache directory is used to store compiled route cache files
+# 
+# Route cache improves performance by avoiding controller scanning on every request
