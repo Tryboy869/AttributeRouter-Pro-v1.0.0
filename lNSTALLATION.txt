@@ -1,0 +1,245 @@
+================================================================================
+  ATTRIBUTEROUTER PRO - INSTALLATION GUIDE
+================================================================================
+
+Thank you for purchasing AttributeRouter Pro!
+
+This guide will help you get started in less than 5 minutes.
+
+================================================================================
+  REQUIREMENTS
+================================================================================
+
+- PHP 8.1 or higher
+- Web server (Apache, Nginx, or PHP built-in server)
+- mod_rewrite enabled (for Apache)
+
+================================================================================
+  INSTALLATION STEPS
+================================================================================
+
+STEP 1: EXTRACT FILES
+---------------------
+Extract the package to your project directory.
+
+Recommended structure:
+  /your-project
+    /src               <- AttributeRouter core files
+    /app
+      /Controllers     <- Your controllers here
+    /cache             <- Route cache (auto-created)
+    /vendor            <- If using Composer
+    index.php          <- Bootstrap file
+    .htaccess          <- Apache rewrite rules
+
+STEP 2: AUTOLOADING
+-------------------
+Option A - With Composer:
+  1. Run: composer install
+  2. Include: require 'vendor/autoload.php';
+
+Option B - Manual (if no Composer):
+  1. Copy the provided autoload.php to your project root
+  2. Include: require 'autoload.php';
+
+STEP 3: CREATE BOOTSTRAP FILE (index.php)
+------------------------------------------
+<?php
+require 'vendor/autoload.php';
+
+use AttributeRouter\Router;
+
+$router = new Router([
+    'controllers_path' => __DIR__ . '/app/Controllers',
+    'base_namespace' => 'App\\Controllers',
+    'cache_enabled' => true,  // Enable in production
+]);
+
+$router->discoverRoutes();
+
+try {
+    $response = $router->run();
+    header('Content-Type: application/json');
+    echo json_encode($response);
+} catch (\Throwable $e) {
+    http_response_code(500);
+    echo json_encode(['error' => $e->getMessage()]);
+}
+
+STEP 4: CONFIGURE WEB SERVER
+-----------------------------
+
+=== APACHE ===
+Create .htaccess in your project root:
+
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+Make sure mod_rewrite is enabled:
+  sudo a2enmod rewrite
+  sudo service apache2 restart
+
+=== NGINX ===
+Add to your server block:
+
+location / {
+    try_files $uri $uri/ /index.php?$query_string;
+}
+
+location ~ \.php$ {
+    fastcgi_pass unix:/var/run/php/php8.1-fpm.sock;
+    fastcgi_index index.php;
+    include fastcgi_params;
+}
+
+=== PHP BUILT-IN SERVER (Development Only) ===
+php -S localhost:8000 index.php
+
+STEP 5: CREATE YOUR FIRST CONTROLLER
+-------------------------------------
+Create: app/Controllers/HomeController.php
+
+<?php
+
+namespace App\Controllers;
+
+use AttributeRouter\Attributes\Route;
+
+class HomeController
+{
+    #[Route('GET', '/')]
+    public function index(): array
+    {
+        return [
+            'message' => 'Welcome to AttributeRouter Pro!',
+            'version' => '1.0.0'
+        ];
+    }
+    
+    #[Route('GET', '/hello/{name}')]
+    public function hello(string $name): array
+    {
+        return ['message' => "Hello, {$name}!"];
+    }
+}
+
+STEP 6: TEST YOUR INSTALLATION
+-------------------------------
+1. Visit: http://localhost/
+   Expected: {"message":"Welcome to AttributeRouter Pro!","version":"1.0.0"}
+
+2. Visit: http://localhost/hello/World
+   Expected: {"message":"Hello, World!"}
+
+3. Run CLI tool:
+   php router.php scan
+   Expected: Table of discovered routes
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+PROBLEM: 404 errors on all routes
+SOLUTION: 
+  - Apache: Enable mod_rewrite, check .htaccess exists
+  - Nginx: Check try_files configuration
+  - Permissions: Ensure web server can read files
+
+PROBLEM: "Class not found" errors
+SOLUTION:
+  - Check namespace in controllers matches 'base_namespace' in config
+  - Run: composer dump-autoload (if using Composer)
+  - Verify autoload.php is included
+
+PROBLEM: Routes not discovered
+SOLUTION:
+  - Check 'controllers_path' points to correct directory
+  - Verify controller files have .php extension
+  - Run: php router.php scan (to see what's discovered)
+  - Check PHP version >= 8.1
+
+PROBLEM: Rate limiting not working
+SOLUTION:
+  - Check tmp directory is writable
+  - Create /cache directory manually
+  - Verify RateLimit attribute is present
+
+PROBLEM: Slow performance
+SOLUTION:
+  - Enable 'cache_enabled' => true in production
+  - Enable PHP opcache (php.ini: opcache.enable=1)
+  - Run: php router.php cache (to precompile routes)
+
+================================================================================
+  CONFIGURATION OPTIONS
+================================================================================
+
+Router Configuration:
+---------------------
+$router = new Router([
+    'controllers_path' => __DIR__ . '/app/Controllers',  // Required
+    'base_namespace' => 'App\\Controllers',              // Required
+    'cache_enabled' => false,                            // true in production
+    'cache_path' => __DIR__ . '/cache',                 // Cache directory
+    'debug' => false,                                    // true in development
+]);
+
+Production Settings:
+-------------------
+- Set 'cache_enabled' => true
+- Set 'debug' => false
+- Enable opcache in php.ini
+- Run: php router.php cache
+
+Development Settings:
+--------------------
+- Set 'cache_enabled' => false (auto-reload routes)
+- Set 'debug' => true (detailed errors)
+- Use PHP built-in server
+
+================================================================================
+  NEXT STEPS
+================================================================================
+
+1. Read the README.md for complete documentation
+2. Check examples/ directory for real-world patterns
+3. Run: php router.php scan (to see all routes)
+4. Explore docs/ folder for advanced features
+
+================================================================================
+  SUPPORT
+================================================================================
+
+Need help? Contact us:
+
+Email: nexusstudio100@gmail.com
+Response Time: 24-48 hours
+
+Before contacting support:
+1. Check this installation guide
+2. Review troubleshooting section
+3. Run: php router.php validate (checks for errors)
+
+================================================================================
+  USEFUL COMMANDS
+================================================================================
+
+php router.php scan          # List all discovered routes
+php router.php cache         # Generate route cache
+php router.php clear-cache   # Clear route cache
+php router.php list          # Show routes in table format
+php router.php validate      # Validate all routes
+
+================================================================================
+
+Thank you for choosing AttributeRouter Pro!
+
+We hope you enjoy using it as much as we enjoyed building it.
+
+Happy coding! 🚀
+
+- Nexus Studio Team
+
+================================================================================
